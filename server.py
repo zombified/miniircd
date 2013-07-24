@@ -1,8 +1,9 @@
 import os
 import select
 import socket
-import time
+import ssl
 import sys
+import time
 
 from channel import Channel
 from client import Client
@@ -10,10 +11,10 @@ from utils import create_directory
 from utils import irc_lower
 
 try:
-    import ssl
-    ssl_available = True
+    import simpleldap
+    ldap_available = True
 except ImportError:
-    ssl_available = False
+    ldap_available = False
 
 
 class Server(object):
@@ -23,6 +24,14 @@ class Server(object):
         self.motdfile = options.motd
         self.verbose = options.verbose
         self.debug = options.debug
+        if ldap_available:
+            self.ldap_server = options.ldap_server
+            self.ldap_port = options.ldap_port
+            self.ldap_dn = options.ldap_dn
+            #self.ldap_password = options.ldap_password
+            self.ldap_encryption = options.ldap_encryption
+            self.ldap_require_cert = options.ldap_require_cert
+            self.ldap_debug = options.ldap_debug
         self.logdir = options.logdir
         self.ssl_pem_file = options.ssl_pem_file
         self.statedir = options.statedir
@@ -146,7 +155,7 @@ class Server(object):
                     conn_accepted = True
                     try:
                         sock = conn
-                        if ssl_available and self.ssl_pem_file:
+                        if self.ssl_pem_file:
                             sock = ssl.wrap_socket(
                                        conn,
                                        server_side = True,

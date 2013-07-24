@@ -6,6 +6,12 @@ import time
 from utils import irc_lower
 from utils import VERSION
 
+try:
+    import simpleldap
+    ldap_available = True
+except ImportError:
+    ldap_available = False
+
 
 class Client(object):
     __linesep_regexp = re.compile(r"\r?\n")
@@ -24,11 +30,12 @@ class Client(object):
         self.realname = None
         self.away = False
         (self.host, self.port) = socket.getpeername()
+        self.__do_ldap_auth = False
         self.__timestamp = time.time()
         self.__readbuffer = ""
         self.__writebuffer = ""
         self.__sent_ping = False
-        if self.server.password:
+        if self.server.password or self.server.ldap_server:
             self.__handle_command = self.__pass_handler
         else:
             self.__handle_command = self.__registration_handler
@@ -82,7 +89,11 @@ class Client(object):
             if len(arguments) == 0:
                 self.reply_461("PASS")
             else:
-                if arguments[0].lower() == server.password:
+                if server.ldap_server:
+                    self.__do_ldap_auth = True
+                    self.__ldap_pass = arguments[0]
+                    self.__handle_command = self.__registration_handler
+                elif arguments[0].lower() == server.password:
                     self.__handle_command = self.__registration_handler
                 else:
                     self.reply("464 :Password incorrect")
@@ -114,6 +125,25 @@ class Client(object):
             self.disconnect("Client quit")
             return
         if self.nickname and self.user:
+            if self.__do_ldap_auth:
+                if not ldap_available:
+                    self.reply("464 :Password incorrect")
+                    return
+                try:
+                    conn = simpleldap.Connection(
+                            server.ldap_server,
+                            port=server.ldap_port,
+                            dn=server.ldap_dn % self.user,
+                            password=self.__ldap_pass,
+                            encryption=server.ldap_encryption,
+                            require_cert=server.ldap_require_cert,
+                            debug=server.ldap_debug)
+                    conn.close()
+                    self.__ldap_pass = None
+                except:
+                    self.reply("464 :Password incorrect")
+                    return
+
             self.reply("001 %s :Hi, welcome to IRC" % self.nickname)
             self.reply("002 %s :Your host is %s, running version miniircd-%s"
                        % (self.nickname, server.name, VERSION))

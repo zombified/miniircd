@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#!/usr/bin/env python
 # Hey, Emacs! This is -*-python-*-.
 #
 # Copyright (C) 2003, 2011-2013 Joel Rosdahl
@@ -34,12 +34,19 @@ import sys
 from server import Server
 from utils import VERSION, PortListType
 
+# test out import of ldap module, since it's not part of core python
+try:
+    import simpleldap
+    ldap_available = True
+except:
+    ldap_available = False
+
 
 def main(argv):
     parser = argparse.ArgumentParser(
                 prog='MiniIRCd',
                 fromfile_prefix_chars='@',
-                description="A small, feature light IRC server.")
+                description="A small, feature-light IRC server.")
 
     parser.add_argument(
         '-d', '--daemon', action='store_true', default=False,
@@ -47,6 +54,42 @@ def main(argv):
     parser.add_argument(
         "--debug", action='store_true', default=False,
         help="print debug messages to stdout")
+
+    # requires the simpleldap library (which depends on the python-ldap
+    # library) to be installed
+    if ldap_available:
+        parser.add_argument(
+            "--ldap-server", metavar='localhost', default=None,
+            help="If option is present, ldap authentication is used for " \
+                 "connecting to the server. Requires python-ldap and simpleldap" \
+                 "packages to be installed, or the option will be ignored. " \
+                 "This method SHOULD NOT be used without the --ssl-pem-file " \
+                 "option, passwords clients give will be sent in plain text " \
+                 "otherwise.")
+        parser.add_argument(
+            "--ldap-port", metavar='389', default=None, type=int,
+            help="Port to connect to LDAP server on.")
+        parser.add_argument(
+            "--ldap-dn", metavar="''", default='',
+            help="DN to use to bind user to the LDAP server. Must contain one " \
+                 "format string variable, ie 'uid=%s,ou=users,dc=exampe,dc=com'")
+        #parser.add_argument(
+        #    "--ldap-password", metavar="''", default='',
+        #    help="Password to use to connect to the LDAP server.")
+        parser.add_argument(
+            "--ldap-encryption", metavar="None", default=None,
+            help="Type of encryption to use when communicating to the LDAP " \
+                 "server. The possible values are 'None', 'SSL', or 'TLS'")
+        parser.add_argument(
+            "--ldap-require-cert", metavar="None", default=None,
+            help="Require a cert with TLS connection. Can be True or False, or " \
+                 "None (the default) to not explicitly set the configuration " \
+                 "option")
+        parser.add_argument(
+            "--ldap-debug", action="store_true", default=False,
+            help="Debug options are turned on for LDAP, statements are output " \
+                 "to standard error")
+
     parser.add_argument(
         "--logdir", metavar='/path/to/log/direcotory/', default=None,
         help="store channel log in directory X, if no directory is specified" \
@@ -56,7 +99,10 @@ def main(argv):
         help="display file X as message of the day")
     parser.add_argument(
         "-p", "--password", metavar='password', default=None,
-        help="require connection password X; default: no password")
+        help="Specify simple password to connect. Default: no password " \
+             "required. If LDAP option is enabled, this option is ignored. " \
+             "It is recommended to use the --ssl-pem-file option with this " \
+             "option so passwords from clients aren't sent as plain text.")
     parser.add_argument(
         "--ports", metavar='port1[,port2,...]', default=[6667],
         type=PortListType(),
