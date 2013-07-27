@@ -86,7 +86,7 @@ def main(argv):
                  "None (the default) to not explicitly set the configuration " \
                  "option")
         parser.add_argument(
-            "--ldap-debug", action="store_true", default=False,
+            "--ldap-debug", action="store_true", default=False, type=bool,
             help="Debug options are turned on for LDAP, statements are output " \
                  "to standard error")
 

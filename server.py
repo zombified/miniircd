@@ -24,6 +24,12 @@ class Server(object):
         self.motdfile = options.motd
         self.verbose = options.verbose
         self.debug = options.debug
+        self.ldap_server = None
+        self.ldap_port = None
+        self.ldap_dn = ''
+        self.ldap_encryption = None
+        self.ldap_require_cert = None
+        self.ldap_debug = False
         if ldap_available:
             self.ldap_server = options.ldap_server
             self.ldap_port = options.ldap_port
