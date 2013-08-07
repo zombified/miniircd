@@ -93,7 +93,7 @@ class Client(object):
                     self.__do_ldap_auth = True
                     self.__ldap_pass = arguments[0]
                     self.__handle_command = self.__registration_handler
-                elif arguments[0].lower() == server.password:
+                elif arguments[0] == server.password:
                     self.__handle_command = self.__registration_handler
                 else:
                     self.reply("464 :Password incorrect")
