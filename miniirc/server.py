@@ -174,6 +174,10 @@ class Server(object):
                         conn_accepted = False
                         self.print_error("SSL ERROR: %s" % e)
                         conn.close()
+                    except socket.error, e:
+                        conn_accepted = False
+                        self.print_error("Connection ERROR: %s" % e)
+                        conn.close()
                     if conn_accepted:
                         self.print_info("Accepted connection from %s:%s." % (
                             addr[0], addr[1]))

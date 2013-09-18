@@ -1,1 +1,7 @@
 *.pyc
+*.pyo
+*.conf
+bin
+env
+ssl
+logs
