@@ -31,8 +31,8 @@
 import argparse
 import sys
 
-from server import Server
-from utils import VERSION, PortListType
+from miniirc.server import Server
+from miniirc.utils import VERSION, PortListType
 
 # test out import of ldap module, since it's not part of core python
 try:
